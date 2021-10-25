@@ -7,6 +7,7 @@ df_vuelos <- read_csv("vuelos.csv")
 
 
 df_vuelos = df_vuelos %>%
+  
   setNames(tolower(gsub(" ","_",names(.)))) %>%
   rename("clase_de_vuelo" = "clase_de_vuelo_(todos_los_vuelos)") %>%
   rename("origen_destino" = "origen_/_destino") 
@@ -15,7 +16,7 @@ df_vuelos = df_vuelos %>%
 df_aeropuertos = df_aeropuertos %>%
   setNames(tolower(gsub(" ","_",names(.)))) %>%
   rename("ciudad" = "nam")
-df_aeropuertos
+
 ```
 
 ```{r}
@@ -28,13 +29,20 @@ df_vuelos = df_vuelos %>%
   mutate(time = dmy_hms(paste(fecha, hora_utc, sep=" "))) %>%
   select(-fecha, -hora_utc, -clasificación_vuelo, -tipo_de_movimiento, -origen_destino, -aeropuerto)
 
+
+df_aeropuertos
+df_vuelos
+
 ```
+
+
+
 ```{r}
 library(geosphere)
 print(names(df_aeropuertos))
 
 temp = df_vuelos %>%
-  mutate(origen = df_aeropuertos[witch(df_aeropuertos["ana"] == origen])
+  mutate(origen2 = sapply(origen, function(x) df_aeropuertos[df_aeropuertos["ita"] == x]))
 
 temp
 ```
