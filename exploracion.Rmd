@@ -9,12 +9,17 @@ df_vuelos <- read_csv("vuelos.csv")
 df_vuelos = df_vuelos %>%
   setNames(tolower(gsub(" ","_",names(.)))) %>%
   rename("clase_de_vuelo" = "clase_de_vuelo_(todos_los_vuelos)") %>%
-  rename("origen_destino" = "origen_/_destino") 
-   
+  rename("origen_destino" = "origen_/_destino")
+
 
 df_aeropuertos = df_aeropuertos %>%
   setNames(tolower(gsub(" ","_",names(.)))) %>%
-  rename("ciudad" = "nam")
+  rename("ciudad" = "nam") %>%
+  rename("provincia" = "cpr") %>%
+  rename("aeropuerto" = "fna") %>%
+  rename("latitud" = "x") %>%
+  rename("longitud" = "y") %>%
+  select(-nom_ciudad) 
 df_aeropuertos
 ```
 
