@@ -1,0 +1,40 @@
+```{r}
+library(readr)
+library(tidyverse)
+
+df_aeropuertos <- read_csv("aeropuertos.csv")
+df_vuelos <- read_csv("vuelos.csv")
+
+
+df_vuelos = df_vuelos %>%
+  setNames(tolower(gsub(" ","_",names(.)))) %>%
+  rename("clase_de_vuelo" = "clase_de_vuelo_(todos_los_vuelos)") %>%
+  rename("origen_destino" = "origen_/_destino") 
+
+df_aeropuertos = df_aeropuertos %>%
+  setNames(tolower(gsub(" ","_",names(.))))
+
+df_aeropuertos
+```
+
+```{r}
+df_vuelos = df_vuelos %>%
+  filter(clasificación_vuelo == "Dom") %>%
+  mutate(origen = case_when(tipo_de_movimiento == "Despegue" ~ aeropuerto,
+                            tipo_de_movimiento == "Aterrizaje" ~ origen_destino)) %>%
+  mutate(destino = case_when(tipo_de_movimiento == "Aterrizaje" ~ aeropuerto,
+                            tipo_de_movimiento == "Despegue" ~ origen_destino)) %>%
+  mutate(time = dmy_hms(paste(fecha, hora_utc, sep=" "))) %>%
+  select(-fecha, -hora_utc, -clasificación_vuelo, -tipo_de_movimiento, -origen_destino, -aeropuerto)
+
+```
+```{r}
+library(geosphere)
+print(names(df_aeropuertos))
+
+temp = df_vuelos %>%
+  mutate(origen = df_aeropuertos[witch(df_aeropuertos["ana"] == origen])
+
+temp
+```
+
