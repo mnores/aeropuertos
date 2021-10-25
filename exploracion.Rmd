@@ -10,10 +10,11 @@ df_vuelos = df_vuelos %>%
   setNames(tolower(gsub(" ","_",names(.)))) %>%
   rename("clase_de_vuelo" = "clase_de_vuelo_(todos_los_vuelos)") %>%
   rename("origen_destino" = "origen_/_destino") 
+   
 
 df_aeropuertos = df_aeropuertos %>%
-  setNames(tolower(gsub(" ","_",names(.))))
-
+  setNames(tolower(gsub(" ","_",names(.)))) %>%
+  rename("ciudad" = "nam")
 df_aeropuertos
 ```
 
