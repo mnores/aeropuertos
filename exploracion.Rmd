@@ -1,16 +1,17 @@
 ```{r}
 library(readr)
 library(tidyverse)
+library(lubridate)
 
 df_aeropuertos <- read_csv("aeropuertos.csv")
 df_vuelos <- read_csv("vuelos.csv")
 
 
 df_vuelos = df_vuelos %>%
-  
   setNames(tolower(gsub(" ","_",names(.)))) %>%
   rename("clase_de_vuelo" = "clase_de_vuelo_(todos_los_vuelos)") %>%
-  rename("origen_destino" = "origen_/_destino")
+  rename("origen_destino" = "origen_/_destino") %>%
+  print(n=10)
 
 
 df_aeropuertos = df_aeropuertos %>%
@@ -20,7 +21,8 @@ df_aeropuertos = df_aeropuertos %>%
   rename("aeropuerto" = "fna") %>%
   rename("latitud" = "x") %>%
   rename("longitud" = "y") %>%
-  select(-nom_ciudad) 
+  select(-nom_ciudad) %>%
+  print(n=10)
 ```
 
 ```{r}
@@ -31,7 +33,7 @@ df_vuelos = df_vuelos %>%
   mutate(destino = case_when(tipo_de_movimiento == "Aterrizaje" ~ aeropuerto,
                             tipo_de_movimiento == "Despegue" ~ origen_destino)) %>%
   mutate(time = dmy_hms(paste(fecha, hora_utc, sep=" "))) %>%
-  select(-fecha, -hora_utc, -clasificación_vuelo, -tipo_de_movimiento, -origen_destino, -aeropuerto)
+  select(-fecha, -hora_utc, -clasificación_vuelo, -origen_destino, -aeropuerto)
 
 
 df_aeropuertos
@@ -42,12 +44,24 @@ df_vuelos
 
 
 ```{r}
-library(geosphere)
-print(names(df_aeropuertos))
+df_aeropuertos2 = select(df_aeropuertos, -thr, -ita, -ose, -iko)
 
-temp = df_vuelos %>%
-  mutate(origen2 = sapply(origen, function(x) df_aeropuertos[df_aeropuertos["ita"] == x]))
+df_vuelosConAeropuertos = df_vuelos %>%
+  inner_join(df_aeropuertos2, by = c("origen" = "ana")) %>%
+  inner_join(df_aeropuertos2, by = c("destino" = "ana"), suffix = c("_origen", "_destino"))
 
-temp
 ```
+
+
+
+```{r}
+library(geosphere)
+
+df_vuelosConAeropuertos = df_vuelosConAeropuertos %>%
+  rowwise %>%
+  mutate(distancia = distHaversine(c(latitud_origen, longitud_origen), c(latitud_destino, longitud_destino)))
+  
+```
+
+
 
