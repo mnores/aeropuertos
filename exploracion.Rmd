@@ -16,24 +16,27 @@ df_vuelos = df_vuelos %>%
 
 df_aeropuertos = df_aeropuertos %>%
   setNames(tolower(gsub(" ","_",names(.)))) %>%
+  select(-iko, -ita, -fuc, -ose, -nom_ciudad) %>%
   rename("ciudad" = "nam") %>%
   rename("provincia" = "cpr") %>%
   rename("aeropuerto" = "fna") %>%
   rename("latitud" = "x") %>%
-  rename("longitud" = "y") %>%
-  select(-nom_ciudad) %>%
-  print(n=10)
+  rename("longitud" = "y") 
 ```
+
 
 ```{r}
 df_vuelos = df_vuelos %>%
   filter(clasificación_vuelo == "Dom") %>%
+  filter(aerolinea_nombre != "0") %>%
+  filter(calidad_dato == "DEFINITIVO") %>%
+  filter(clase_de_vuelo == "Regular") %>%
   mutate(origen = case_when(tipo_de_movimiento == "Despegue" ~ aeropuerto,
                             tipo_de_movimiento == "Aterrizaje" ~ origen_destino)) %>%
   mutate(destino = case_when(tipo_de_movimiento == "Aterrizaje" ~ aeropuerto,
                             tipo_de_movimiento == "Despegue" ~ origen_destino)) %>%
   mutate(time = dmy_hms(paste(fecha, hora_utc, sep=" "))) %>%
-  select(-fecha, -hora_utc, -clasificación_vuelo, -origen_destino, -aeropuerto)
+  select(-fecha, -hora_utc, -clasificación_vuelo, -origen_destino, -aeropuerto, -clase_de_vuelo, -calidad_dato)
 
 
 df_aeropuertos
@@ -41,14 +44,27 @@ df_vuelos
 
 ```
 
+```{r}
+despegues = df_vuelos %>% filter(tipo_de_movimiento == "Despegue") %>% select(-tipo_de_movimiento)
+aterrizajes = df_vuelos %>% filter(tipo_de_movimiento == "Aterrizaje") %>% select(-tipo_de_movimiento)
+
+df_vuelos2 = left_join(despegues, aterrizajes, by= c("origen" = "origen", 
+                                                    "destino" = "destino", 
+                                                    "aerolinea_nombre" = "aerolinea_nombre", 
+                                                    "aeronave" = "aeronave"), suffix = c("_salida", "_llegada")) %>% 
+  mutate(tiempo_de_vuelo = time_llegada - time_salida)  %>% 
+  filter(tiempo_de_vuelo > 0) %>%
+  filter(tiempo_de_vuelo < 7*3600) %>% 
+  print(5)
+  
+```
 
 
 ```{r}
-df_aeropuertos2 = select(df_aeropuertos, -thr, -ita, -ose, -iko)
-
-df_vuelosConAeropuertos = df_vuelos %>%
-  inner_join(df_aeropuertos2, by = c("origen" = "ana")) %>%
-  inner_join(df_aeropuertos2, by = c("destino" = "ana"), suffix = c("_origen", "_destino"))
+df_vuelosConAeropuertos = df_vuelos2 %>%
+  inner_join(df_aeropuertos, by = c("origen" = "ana")) %>%
+  inner_join(df_aeropuertos, by = c("destino" = "ana"), suffix = c("_origen", "_destino")) %>%
+  print(5)
 
 ```
 
@@ -61,6 +77,39 @@ df_vuelosConAeropuertos = df_vuelosConAeropuertos %>%
   rowwise %>%
   mutate(distancia = distHaversine(c(latitud_origen, longitud_origen), c(latitud_destino, longitud_destino)))
   
+```
+
+# Análisis del dataset procesado:
+
+## Hasta acá hicimos una limpieza y procesado de los datos para llegar a una base de datos con la cual vamos a trabajar para validar nuestras hipotesis.
+
+##Empecemos por ver la cantidad de gente que salió y entró a cada provincia.
+ notamos que hay errores en la cantidad de pasajeros, nos quedamos con los que tienen un error menor a 10
+la rioja no tiene salida asi que le pusimos 0 asi no nos aparece el na
+
+
+```{r}
+salieron_de_provincia = df_vuelosConAeropuertos %>%
+  na.omit() %>%
+  filter(abs(pasajeros_salida - pasajeros_llegada)<10) %>%
+  group_by(provincia_origen) %>%
+  summarise(salieron = sum(pasajeros_salida))
+
+entraron_a_provincia = df_vuelosConAeropuertos %>%
+  na.omit() %>%
+  filter(abs(pasajeros_salida - pasajeros_llegada)<10) %>%
+  group_by(provincia_destino) %>%
+  summarise(entraron = sum(pasajeros_llegada))
+
+
+div = left_join(entraron_a_provincia, salieron_de_provincia, by=c("provincia_destino" = "provincia_origen")) %>%
+  rename("provincia" = "provincia_destino") %>%
+  mutate(migraron = entraron - salieron) %>%
+  arrange(provincia)
+
+div[div$provincia == "La Rioja", "migraron"] = 55
+div[div$provincia == "La Rioja", "salieron"] = 0
+div
 ```
 
 
