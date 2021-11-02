@@ -1,3 +1,13 @@
+#Trabajo práctico 1 - Laboratorio de datos - 2do cuatrimestre 2021
+
+##Integrantes: Ariel Oliveira, Manuel Nores, Tomás Curti.
+
+###Empezamos por cargar los archivos csv a Rstudio para poder visualizar los data frames. Por un lado tenemos el dataframe de los vuelos durante el 2021 y por otro lado tenemos el dataframe de aeropuertos en territorio Argentino. 
+
+###En el data frame de los vuelos registrados durante el 2021 notamos que los nombres de algunas columnas no nos resultaban ideales de manera tal que los cambiamos. Por un lado nos reemplazamos los espacios por guiones bajos y renombramos dos variables.
+
+### También cambiamos el nombre de algunas variables del data frame de aeropuertos, reemplzando acrónimos por su significado para que resultara mas conveniente la exploración de datos.
+
 ```{r}
 library(readr)
 library(tidyverse)
@@ -23,7 +33,14 @@ df_aeropuertos = df_aeropuertos %>%
   rename("latitud" = "x") %>%
   rename("longitud" = "y") 
 ```
+#Limpieza del data frame:
 
+
+### En este punto pudimos explorar el data frame y decidimos hacer unos filtrados para quedarnos con partes específicas.
+
+### En primer lugar filtramos por clasificación de vuelo Doméstico, de manera que nos quedamos con los vuelos de cabotaje. Nos decisimos de todos los registros donde el nombre de la aerolínea fuera un cero, ya que estos coincidian con vuelos privados. En general de pocos o ningún pasajero. Otro filtro que aplicamos fue que la calidad de dato sea "DEFINITIVO", ya que había varios datos con calidad "PROVISORIA" y nos pareció mejor trabajar con aquellos datos que ya completaron el camino de validación por completo. El último filtro que aplicamos fue el de clase de vuelo regular, para quedarnos con los vuelos realizados por aerolineas y accesibles a cualquier consumidor final. Más adelante veremos mas en detalle por que esto nos resultó importante.
+
+### Por último, reescribimos la variable origen/destino en dos variables separadas de manera que tenemos una columna para el origen y otra para el destino para todos los registros de vuelos.
 
 ```{r}
 df_vuelos = df_vuelos %>%
@@ -43,6 +60,11 @@ df_aeropuertos
 df_vuelos
 
 ```
+# Cálculo de tiempo en vuelo
+
+### En esta sección utilizamos los tiempos de despegue y aterrizaje para poder calcular el tiempo de vuelo en cada registro. 
+
+### También aplicamos un filtro para quedarnos con aquellos registros que hayan tenido menos de 7 horas de vuelo, ya que en ese tiempo puede hacerse el viaje mas largo en la Argentina.
 
 ```{r}
 despegues = df_vuelos %>% filter(tipo_de_movimiento == "Despegue") %>% select(-tipo_de_movimiento)
@@ -58,7 +80,9 @@ df_vuelos2 = left_join(despegues, aterrizajes, by= c("origen" = "origen",
   print(5)
   
 ```
+#Fusión de los data sets:
 
+### En este chunk lo que logramos es fucionar ambos data sets en uno único, usando como llave de unión a la variable "ana" que hace referencia a las siglas de las ciudades.
 
 ```{r}
 df_vuelosConAeropuertos = df_vuelos2 %>%
@@ -67,7 +91,10 @@ df_vuelosConAeropuertos = df_vuelos2 %>%
   print(5)
 
 ```
+#Cálculo de distancias recorridas por los aviones.
 
+
+### En este apartado utilizamos el paquete geosphere para poder calcular las distancias recorridas por los aviones en función de las coordenadas de despegue y aterrizaje. Para lograr esto utilizamos la función distHaversine provista por el paquete mencionado.
 
 
 ```{r}
@@ -81,12 +108,20 @@ df_vuelosConAeropuertos = df_vuelosConAeropuertos %>%
 
 # Análisis del dataset procesado:
 
-## Hasta acá hicimos una limpieza y procesado de los datos para llegar a una base de datos con la cual vamos a trabajar para validar nuestras hipotesis.
+### Hasta acá hicimos una limpieza y procesado de los datos para llegar a una base de datos con la cual vamos a trabajar para validar nuestras hipotesis. Pero cuales son nuestras hipotesis??
+
+## Hipótesis:
+
+### Por un lado nos interesa averiguar la cantidad de personas que salieron y entraron a cada provincia. Lo que nos motivo a hacer esto es ver si hay alguna tendencia de "migración" en alguna provincia y en el caso de que así sea, ver hacia donde es que la gente está yendo. 
+
+### Por otro lado, nos preguntamos el porcentaje del mercado que se lleva cada aerolínea. La forma en la que cuantificaremos la porción del mercado consistirá en la cantidad de tiempo de vuelo que tiene cada aerolinea por sobre el total, pesado por la cantidad de pasajeros totales transportados.
+
 
 ##Empecemos por ver la cantidad de gente que salió y entró a cada provincia.
- notamos que hay errores en la cantidad de pasajeros, nos quedamos con los que tienen un error menor a 10
-la rioja no tiene salida asi que le pusimos 0 asi no nos aparece el na
 
+### Notamos que hay errores en la cantidad de pasajeros entre el despegue y el aterrizaje, es decir que un mismo registro aparenta haber salido con una cantidad disinta de pasajeros a la que llegó. La forma que lidiamos con esto fue quedarnos con los que tienen una diferencia menor a 10 pasajeros. La Rioja no tiene salidas registradas por lo que le pusimos 0 en pasajeros que salieron de la provincia para que no quede NA como dato.
+
+### Finalmente definimos la "divergencia" de cada provincia a partir de la diferencia entre la gente que salió y la gente que entró a la provincia.
 
 ```{r}
 salieron_de_provincia = df_vuelosConAeropuertos %>%
@@ -120,9 +155,9 @@ div[div$provincia == "Capital Federa", "provincia"] = "Ciudad Autónoma de Bueno
 div
 ```
 
+### De este análisis pudimos ver que la provincia con menor divergencia (notar que la divergencia negativa está vinculada a la salida de personas) es la provincia de Buenos Aires. Tuvo una migración de 52 mil personas aproximadamente durante el 2021 (hasta ???). Veamos el siguiente mapa de colores para poder visualizar la divergencia de cada provincia:
 
 
-COSAS con mapas
 
 ```{r}
 library(sf)
@@ -157,6 +192,9 @@ ggplot(arg_provincias)+
         legend.position = 'bottom')
 
 ```
+## Análisis de la divergencia:
+
+###Ninguna otra provincia tuvo una salida considerable de gente. Esto nos generó nuevas preguntas. Por ejemplo, hacia donde va la gente que sale de Buenos Aires?? Para poder analizar eso hacemos una busqueda específica sobre los destinos a los cuales fue la gente que salió desde Buenos Aires. Para lograr eso generamos el siguiente código:
 
 
 
