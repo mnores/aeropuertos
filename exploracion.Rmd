@@ -109,7 +109,53 @@ div = left_join(entraron_a_provincia, salieron_de_provincia, by=c("provincia_des
 
 div[div$provincia == "La Rioja", "migraron"] = 55
 div[div$provincia == "La Rioja", "salieron"] = 0
+
+
+div[div$provincia == "Sgo. del Ester", "provincia"] = "Santiago del Estero"
+div[div$provincia == "Tucuman", "provincia"] = "Tucumán"
+div[div$provincia == "Tierra Del Fue", "provincia"] = "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+div[div$provincia == "Capital Federa", "provincia"] = "Ciudad Autónoma de Buenos Aires"
+
+
 div
+```
+
+
+
+COSAS con mapas
+
+```{r}
+library(sf)
+
+arg_provincias = read_sf("./shapefile","ign_provincia")
+arg_provincias = arg_provincias %>% left_join(div, by=c("NAM" = "provincia"))
+arg_provincias[arg_provincias$NAM == "Formosa", "entraron"] = 0
+arg_provincias[arg_provincias$NAM == "Formosa", "salieron"] = 0
+arg_provincias[arg_provincias$NAM == "Formosa", "migraron"] = 0
+
+
+
+ggplot(arg_provincias)+
+  geom_sf(aes(fill=as.factor(migraron)),color='transparent')+
+  scale_fill_viridis_d(name='Inhab/km²',
+                       guide=guide_legend(
+                         direction='vertical',
+                         title.position='top',
+                         title.hjust = .5,
+                         label.hjust = .5,
+                         label.position = 'right',
+                         keywidth = 3,
+                         keyheight = .5
+                       ),
+                       option = "C")+
+  
+  labs(title="Brazil's demographics",
+       subtitle='Population density',
+       caption=c('Source: IBGE - Censo demográfico, 2010'))+
+  theme_void()+
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom')
+
 ```
 
 
