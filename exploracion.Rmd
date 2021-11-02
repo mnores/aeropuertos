@@ -169,10 +169,12 @@ arg_provincias[arg_provincias$NAM == "Formosa", "salieron"] = 0
 arg_provincias[arg_provincias$NAM == "Formosa", "migraron"] = 0
 
 
+arg_provincias$claseMigracion <- cut(arg_provincias$migraron ,breaks=c((-60000),(-1000),0,1500,3000, 4500, 6000, 7500, 9000, Inf),
+                        labels=c('(-50000)-(-1000)','(-1000)-0','0-1500','1500-3000','3000-4500','4500-6000','6000-7500','7500-9000','> 9000'))
 
 ggplot(arg_provincias)+
-  geom_sf(aes(fill=as.factor(migraron)),color='transparent')+
-  scale_fill_viridis_d(name='Inhab/km²',
+  geom_sf(aes(fill=claseMigracion),color='transparent')+
+  scale_fill_viridis_d(name='Cantidad de personas que migraron/emigraron',
                        guide=guide_legend(
                          direction='vertical',
                          title.position='top',
@@ -184,19 +186,20 @@ ggplot(arg_provincias)+
                        ),
                        option = "C")+
   
-  labs(title="Brazil's demographics",
-       subtitle='Population density',
-       caption=c('Source: IBGE - Censo demográfico, 2010'))+
+  labs(title="Divergencia interna de Argentina año 2021",
+       subtitle='Densidad de migración',
+       caption=c('Fuente: Ministerio de Transporte, Nación.'))+
   theme_void()+
   theme(title=element_text(face='bold'),
-        legend.position = 'bottom')
+        legend.position = 'right')
 
 ```
+
 ## Análisis de la divergencia:
 
 ###Ninguna otra provincia tuvo una salida considerable de gente. Esto nos generó nuevas preguntas. Por ejemplo, hacia donde va la gente que sale de Buenos Aires?? Para poder analizar eso hacemos una busqueda específica sobre los destinos a los cuales fue la gente que salió desde Buenos Aires. Para lograr eso generamos el siguiente código:
 
-A DONDE FUERON LOS DE BS AS
+
 
 
 ```{r}
@@ -230,15 +233,27 @@ migracionBsAs[migracionBsAs$provincia == "Buenos Aires", "migraronBsAs"] = 0
 
 ```
 
+#Que hace el código:
+
+### En este código filtramos, como mencionamos antes, todos los registros que tengan como origen a Buenos Aires y utilizamos esa información para hacer un nuevo mapa donde mostramos a que provincias fueron los pasajeros. Agregamos a mano aquellas provincias donde no había ningun dato, para que el mapa sea consistente y no aparezca ningun NA.
+
 ```{r}
 arg_provincias = arg_provincias %>% left_join(migracionBsAs, by=c("NAM" = "provincia"))
 arg_provincias[arg_provincias$NAM == "La Rioja", "migraronBsAs"] = 0
 arg_provincias[arg_provincias$NAM == "Formosa", "migraronBsAs"] = 0
 arg_provincias %>% select("NAM", migraronBsAs)
 
+ggplot(arg_provincias)
+```
+
+
+```{r}
+arg_provincias$claseMigracion <- cut(arg_provincias$migraron ,breaks=c(Inf, (10000),(9000),8000,7000,6000, 5000, 4000, 3000, 2000, 1000, -Inf),
+                        labels=c('10000+','9000+','8000+','7000+','6000+','5000+','4000+','3000+','2000+','1000+','0'))
+
 ggplot(arg_provincias)+
-  geom_sf(aes(fill=as.factor(migraronBsAs)),color='transparent')+
-  scale_fill_viridis_d(name='Inhab/km²',
+  geom_sf(aes(fill=claseMigracion),color='transparent',inherit.aes = TRUE)+ 
+  scale_fill_viridis_d(name='Cantidad de personas que migraron/emigraron',
                        guide=guide_legend(
                          direction='vertical',
                          title.position='top',
@@ -250,11 +265,26 @@ ggplot(arg_provincias)+
                        ),
                        option = "C")+
   
-  labs(title="Brazil's demographics",
-       subtitle='Population density',
-       caption=c('Source: IBGE - Censo demográfico, 2010'))+
+  labs(title="Divergencia interna de Buenos Aires año 2021",
+       subtitle='Densidad de migración',
+       caption=c('Fuente: Ministerio de Transporte, Nación.'))+
   theme_void()+
   theme(title=element_text(face='bold'),
-        legend.position = 'bottom')
+        legend.position = 'right')
+
+
 ```
+
+
+### Finalmente podemos ver que la mayoría de las salidas de Buenos Aires fueron a las provincias: Mendoza, Rio Negro y Tiera del Fuego.
+
+
+#Analisis de porción de mercado según aerolínea:
+
+## En esta sección analizaremos la parte de mercado de vuelos que se llevó cada aerolínea. Para ello vamos a implementar un código que calcula el tiempo de vuelo total y la cantidad total de pasajeros que viajó en cada aerolínea.
+
+```{r}
+
+```
+
 
