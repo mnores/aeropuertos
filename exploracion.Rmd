@@ -158,5 +158,65 @@ ggplot(arg_provincias)+
 
 ```
 
+A DONDE FUERON LOS DE BS AS
 
+
+```{r}
+provincias_BsAs = df_vuelosConAeropuertos %>% 
+  filter(provincia_destino == "Buenos Aires") %>%
+  na.omit() %>%
+  filter(abs(pasajeros_salida - pasajeros_llegada)<10) %>%
+  group_by(provincia_origen) %>%
+  summarize(entraronBsAs = sum(pasajeros_llegada))
+
+
+BsAs_provincias = df_vuelosConAeropuertos %>%
+  filter(provincia_origen == "Buenos Aires") %>%
+  na.omit() %>%
+  filter(abs(pasajeros_salida - pasajeros_llegada)<10) %>%
+  group_by(provincia_destino) %>%
+  summarise(salieronBsAs = sum(pasajeros_salida))
+
+migracionBsAs = left_join(BsAs_provincias, provincias_BsAs, by=c("provincia_destino" = "provincia_origen")) %>%
+  rename("provincia" = "provincia_destino") 
+
+migracionBsAs[migracionBsAs$provincia == "Sgo. del Ester", "provincia"] = "Santiago del Estero"
+migracionBsAs[migracionBsAs$provincia == "Tucuman", "provincia"] = "Tucumán"
+migracionBsAs[migracionBsAs$provincia == "Tierra Del Fue", "provincia"] = "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+migracionBsAs[migracionBsAs$provincia == "Capital Federa", "provincia"] = "Ciudad Autónoma de Buenos Aires"
+
+migracionBsAs = migracionBsAs %>%
+  mutate(migraronBsAs = salieronBsAs - entraronBsAs)
+
+migracionBsAs[migracionBsAs$provincia == "Buenos Aires", "migraronBsAs"] = 0
+
+```
+
+```{r}
+arg_provincias = arg_provincias %>% left_join(migracionBsAs, by=c("NAM" = "provincia"))
+arg_provincias[arg_provincias$NAM == "La Rioja", "migraronBsAs"] = 0
+arg_provincias[arg_provincias$NAM == "Formosa", "migraronBsAs"] = 0
+arg_provincias %>% select("NAM", migraronBsAs)
+
+ggplot(arg_provincias)+
+  geom_sf(aes(fill=as.factor(migraronBsAs)),color='transparent')+
+  scale_fill_viridis_d(name='Inhab/km²',
+                       guide=guide_legend(
+                         direction='vertical',
+                         title.position='top',
+                         title.hjust = .5,
+                         label.hjust = .5,
+                         label.position = 'right',
+                         keywidth = 3,
+                         keyheight = .5
+                       ),
+                       option = "C")+
+  
+  labs(title="Brazil's demographics",
+       subtitle='Population density',
+       caption=c('Source: IBGE - Censo demográfico, 2010'))+
+  theme_void()+
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom')
+```
 
