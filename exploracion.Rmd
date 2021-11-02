@@ -76,6 +76,7 @@ df_vuelos2 = left_join(despegues, aterrizajes, by= c("origen" = "origen",
                                                     "aeronave" = "aeronave"), suffix = c("_salida", "_llegada")) %>% 
   mutate(tiempo_de_vuelo = time_llegada - time_salida)  %>% 
   filter(tiempo_de_vuelo > 0) %>%
+  filter(aerolinea_nombre != "0") %>%
   filter(tiempo_de_vuelo < 7*3600) %>% 
   print(5)
   
@@ -281,10 +282,16 @@ ggplot(arg_provincias)+
 
 #Analisis de porción de mercado según aerolínea:
 
-## En esta sección analizaremos la parte de mercado de vuelos que se llevó cada aerolínea. Para ello vamos a implementar un código que calcula el tiempo de vuelo total y la cantidad total de pasajeros que viajó en cada aerolínea.
+## En esta sección analizaremos la parte de mercado de vuelos que se llevó cada aerolínea. Para ello vamos a implementar un código que calcula  la cantidad total de pasajeros que viajó en cada aerolínea. Nuestra teoria es que las personas deciden viajar mas con las aerolineas mas conocidas como lo puede ser "Aerolineas Argentinas", ya que le generan cierta confianza y tienen mas frecuencia que otras, y con las low-cost, porque suelen ser mucho mas baratas que el resto pero aun asi brindan el mismo servicio con la diferencia que no se puede despachar equipaje. Esto las hace en nuestra opinion las mejores opciones para viajar dentro del pais.
 
 ```{r}
+pasajeros_aerolineas =  df_vuelos2 %>% group_by(aerolinea_nombre) %>%
+filter(pasajeros_salida > 20) %>% 
+  summarise(pasajeros = sum(pasajeros_salida))
+show(pasajeros_aerolineas)
 
+library(RColorBrewer)
+coul <- brewer.pal(6, "Set2") 
+barplot(height=pasajeros_aerolineas$pasajeros, names=pasajeros_aerolineas$aerolinea_nombre, col=coul, cex.names = 0.33, las=2)
 ```
-
-
+## Tal como pensabamos Aerolineas Argentinas es la aerolinea que mas pasajeros transporto, esto no nos asombra ya que es tambien de la que mas vuelos figuran en el dataframe. Luego, le siguen Jetsmart y Flybondi, dos conocidas aerolineas low-cost.
