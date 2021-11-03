@@ -293,5 +293,7 @@ show(pasajeros_aerolineas)
 library(RColorBrewer)
 coul <- brewer.pal(6, "Set2") 
 barplot(height=pasajeros_aerolineas$pasajeros, names=pasajeros_aerolineas$aerolinea_nombre, col=coul, cex.names = 0.33, las=2)
+
+cant_vuelos_aerolinea = aggregate(df_vuelos2$aeronave, by=list(df_vuelos2$aerolinea_nombre), FUN=length)
 ```
 ## Tal como pensabamos Aerolineas Argentinas es la aerolinea que mas pasajeros transporto, esto no nos asombra ya que es tambien de la que mas vuelos figuran en el dataframe. Luego, le siguen Jetsmart y Flybondi, dos conocidas aerolineas low-cost.
